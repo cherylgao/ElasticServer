@@ -23,7 +23,7 @@ public class ElasticSearchServer {
     private Server jettyServer;
 
     public static void main(String[] args) {
-        ElasticSearchServer server = new ElasticSearchServer(8080);
+        ElasticSearchServer server = new ElasticSearchServer(6064);
         server.startOnThread();
         server.join();
         System.exit(0);
