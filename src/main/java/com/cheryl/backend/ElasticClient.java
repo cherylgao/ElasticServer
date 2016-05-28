@@ -2,6 +2,7 @@ package com.cheryl.backend;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.action.search.SearchResponse;
@@ -21,7 +22,11 @@ import com.cheryl.bean.SearchResults;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.google.gson.*;
+
 public class ElasticClient {
+   private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+   
 	private Client client;
 	public ElasticClient(){
 		try {
@@ -56,7 +61,6 @@ public class ElasticClient {
 	   // for basic interface
 	   
 	   MatchQueryBuilder qb = matchQuery("title", query);                  
-
 	   
 	   SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
@@ -65,27 +69,22 @@ public class ElasticClient {
             .execute()
             .actionGet();
 	   
-
 	   SearchHit[] results = elasticResponse.getHits().getHits();
-	   
-	   System.out.println(results);
-	   
       System.out.println("Current results: " + results.length);
+      
+      String resultJsons = "";
+      
+      Map<String, Map<String, Object>> final_map = new HashMap<>();
       for (SearchHit hit : results) {
           System.out.println("------------------------------");
-          Map<String,Object> result = hit.getSource();   
-          System.out.println(result);
+          Map<String,Object> result = hit.getSource();
+          String id = hit.getId();
+          final_map.put(id, result);
+          //System.out.println(result);
       }
-	   
-      /*
-      // instance a json mapper
-      ObjectMapper mapper = new ObjectMapper(); // create once, reuse
-
-      // generate json
-      byte[] json = mapper.writeValueAsBytes(results);
-      
-      System.out.println(json.toString());
-      */
+      String final_results = gson.toJson(final_map);
+	   System.out.println(final_results);
+    
 	   
 		return new SearchResults(elasticResponse);
 	}

@@ -1,5 +1,6 @@
 package com.cheryl.resources;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.directory.SearchResult;
@@ -21,6 +22,8 @@ import com.cheryl.backend.ElasticClient;
 import com.cheryl.bean.SearchResults;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 @Component
 @Path("/")
@@ -28,6 +31,8 @@ public class SearchResources {
 
    @Autowired
    private ElasticClient elasticClient;
+   private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+   
 
    @GET
    @Path("search")
@@ -47,9 +52,19 @@ public class SearchResources {
        */
 
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
+
+      
+      
+      Map<String, Map<String, Object>> final_map = new HashMap<>();
       for (SearchHit hit : results) {
-         Map<String,Object> result = hit.getSource();      
+          System.out.println("------------------------------");
+          Map<String,Object> result = hit.getSource();
+          String id = hit.getId();
+          final_map.put(id, result);
+          //System.out.println(result);
       }
+      String final_results = gson.toJson(final_map);
+      System.out.println(final_results);
       
       /*
       // instance a json mapper
@@ -64,7 +79,7 @@ public class SearchResources {
 //    resumeWithResponse(ar, value.toString());     ???not sure
       
       
-      resumeWithResponse(ar, queryItem + from + ":" +to+"\n");
+      resumeWithResponse(ar, final_results);
    }
 
    private static void resumeWithResponse(AsyncResponse ar, String res){
