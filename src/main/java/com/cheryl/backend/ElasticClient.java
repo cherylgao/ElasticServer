@@ -67,6 +67,9 @@ public class ElasticClient {
 	   
 
 	   SearchHit[] results = elasticResponse.getHits().getHits();
+	   
+	   System.out.println(results);
+	   
       System.out.println("Current results: " + results.length);
       for (SearchHit hit : results) {
           System.out.println("------------------------------");
@@ -74,6 +77,7 @@ public class ElasticClient {
           System.out.println(result);
       }
 	   
+      /*
       // instance a json mapper
       ObjectMapper mapper = new ObjectMapper(); // create once, reuse
 
@@ -81,6 +85,7 @@ public class ElasticClient {
       byte[] json = mapper.writeValueAsBytes(results);
       
       System.out.println(json.toString());
+      */
 	   
 		return new SearchResults(elasticResponse);
 	}

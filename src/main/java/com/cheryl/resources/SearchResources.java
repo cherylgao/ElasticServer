@@ -47,14 +47,23 @@ public class SearchResources {
        */
 
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
-      System.out.println("Current results: " + results.length);
       for (SearchHit hit : results) {
-         System.out.println("------------------------------");
          Map<String,Object> result = hit.getSource();      
-         System.out.println(result);
       }
+      
+      /*
+      // instance a json mapper
+      ObjectMapper mapper = new ObjectMapper(); // create once, reuse
+
+      // generate json
+      byte[] json = mapper.writeValueAsBytes(yourinstancebean);
+      // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-index.html
+      */
+      
 //    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
+      
+      
       resumeWithResponse(ar, queryItem + from + ":" +to+"\n");
    }
 
