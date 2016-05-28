@@ -83,7 +83,7 @@ public class SearchResources {
    }
 
    private static void resumeWithResponse(AsyncResponse ar, String res){
-      Response response = Response.ok(res).type("application/json; charset=utf-8").header("content-length", res.length()).build();
+      Response response = Response.ok(res).type("application/json; charset=utf-8").header("content-length", res.length()).header("Access-Control-Allow-Origin", "*").build();
       ar.resume(response);
    }
 }
