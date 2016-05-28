@@ -53,7 +53,8 @@ public class SearchResources {
          Map<String,Object> result = hit.getSource();      
          System.out.println(result);
       }
-
+//    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
+//    resumeWithResponse(ar, value.toString());     ???not sure
       resumeWithResponse(ar, queryItem + from + ":" +to+"\n");
    }
 
