@@ -1,5 +1,6 @@
 package com.cheryl.resources;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +15,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.highlight.HighlightField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -53,33 +56,32 @@ public class SearchResources {
 
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
 
+      StringBuilder arrayJson = new StringBuilder();
+      arrayJson.append("[");
       
-      
-      Map<String, Map<String, Object>> final_map = new HashMap<>();
       for (SearchHit hit : results) {
-          System.out.println("------------------------------");
           Map<String,Object> result = hit.getSource();
-          String id = hit.getId();
-          final_map.put(id, result);
-          //System.out.println(result);
-      }
-      String final_results = gson.toJson(final_map);
-      System.out.println(final_results);
-      
-      /*
-      // instance a json mapper
-      ObjectMapper mapper = new ObjectMapper(); // create once, reuse
+          StringBuilder excerptBuilder = new StringBuilder();
+          for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+              for (Text text : highlight.getValue().fragments()) { 
+                  excerptBuilder.append(text.string()); 
+                  excerptBuilder.append(" ... "); 
+              } 
+          } 
 
-      // generate json
-      byte[] json = mapper.writeValueAsBytes(yourinstancebean);
-      // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-index.html
-      */
+          String resultJson = gson.toJson(result);
+          String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
+                + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
+          arrayJson.append(resultWithSinppet);
+          arrayJson.append(",");
+      }
+      
+      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
       
 //    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
       
-      
-      resumeWithResponse(ar, final_results);
+      resumeWithResponse(ar, arrayFinalJson);
    }
 
    private static void resumeWithResponse(AsyncResponse ar, String res){

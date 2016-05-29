@@ -10,11 +10,10 @@ public class ElasticClientTest
 {
 
    @Test
-   public void test() throws JsonProcessingException
-   {
+   public void test() {
       ElasticClient test = new ElasticClient();
-      String query = "Harry Potter and the Cursed Child";
-      test.searchByRange("Harry Potter and the Cursed Child", 0, 0);
+      String query = "Machine Learning";
+      test.searchByRange(query, 0, 3);
    }
 
 }
