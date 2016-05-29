@@ -11,6 +11,7 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
@@ -60,20 +61,18 @@ public class ElasticClient {
       .get();
       */
 	}
+	
+	// for basic interface  
 	public SearchResults searchByRange(String query, int start, int end) {
-		// TODO call function;km n, 
-	   
-	   // for basic interface	   
+	     
 	   //MatchQueryBuilder qb = matchQuery("title", query); 
 	   MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
 	         query,     // Text you are looking for
 	         "title", "description", "url", "author", "ISBN1", "ISBN2", "tag" // Fields you query on
 	         );
 	   
-	     //fuzzyQuery   
-	   System.out.println("start: " + start);
+	     //optional to do fuzzyQuery  
 	   int size = end - start + 1;
-	   System.out.println("size: " + size);
 	   
 	   SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
@@ -116,4 +115,64 @@ public class ElasticClient {
       	  
 		return new SearchResults(elasticResponse);
 	}
+	
+	
+	public SearchResults searchByRange(String queryGenre, String queryTitle, 
+	      String queryISBN, String queryAuthor, double queryminPrice, double querymaxPrice) {
+	   
+	   //MatchQueryBuilder qb = matchQuery("title", query); 
+      BoolQueryBuilder qb = QueryBuilders.boolQuery()
+            //.must(QueryBuilders.matchQuery(queryGenre, "catagory"))
+            .should(QueryBuilders.matchQuery("title", queryTitle))
+            .should(QueryBuilders.multiMatchQuery(queryISBN, "ISBN1", "ISBN2"))
+            .should(QueryBuilders.matchQuery("author", queryAuthor));
+            //.should(QueryBuilders.rangeQuery("price")
+            //      .from(queryminPrice)
+            //      .to(querymaxPrice)
+            //      .includeLower(true)
+            //      .includeUpper(true));
+      
+        //fuzzyQuery   
+      
+      
+      SearchResponse elasticResponse = client.prepareSearch("books")
+            .setTypes("book")
+            .setSearchType(SearchType.QUERY_THEN_FETCH)
+            .setQuery(qb)
+            //.addSort("price", SortOrder.ASC) // sort by price
+            .addHighlightedField("title") //snippet
+            .addHighlightedField("description")
+            .execute()
+            .actionGet();
+      
+      SearchHit[] results = elasticResponse.getHits().getHits();
+      System.out.println("Current results: " + results.length);
+      
+      StringBuilder arrayJson = new StringBuilder();
+      arrayJson.append("[");
+      
+      for (SearchHit hit : results) {
+          System.out.println("------------------------------");
+          Map<String,Object> result = hit.getSource();
+          StringBuilder excerptBuilder = new StringBuilder();
+          for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+              for (Text text : highlight.getValue().fragments()) { 
+                  excerptBuilder.append(text.string()); 
+                  excerptBuilder.append(" ... "); 
+              } 
+          } 
+
+          String resultJson = gson.toJson(result);
+          String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
+                + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
+          arrayJson.append(resultWithSinppet);
+          arrayJson.append(",");
+      }
+      
+      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
+      System.out.println(arrayFinalJson);
+           
+      return new SearchResults(elasticResponse);
+   }
+   
 }

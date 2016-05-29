@@ -34,6 +34,7 @@ public class SearchResources {
 
    @Autowired
    private ElasticClient elasticClient;
+   private SearchResults sr;
    private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
    
 
@@ -43,15 +44,33 @@ public class SearchResources {
          @Context final HttpHeaders headers,
          @QueryParam("query") @DefaultValue("") final String queryItem,
          @QueryParam("from") @DefaultValue("") final String from,
-         @QueryParam("to") @DefaultValue("") final String to
+         @QueryParam("to") @DefaultValue("") final String to,
+         @QueryParam("genre") @DefaultValue("") final String queryGenre,
+         @QueryParam("title") @DefaultValue("") final String queryTitle,
+         @QueryParam("isbn") @DefaultValue("") final String queryISBN,
+         @QueryParam("author") @DefaultValue("") final String queryAuthor,
+         @QueryParam("minPrice") @DefaultValue("") String queryminPrice,
+         @QueryParam("maxPrice") @DefaultValue("") String querymaxPrice,
+         @QueryParam("adv") @DefaultValue("") final String adv
          ) throws JsonProcessingException{
       /*
        * TO DO: call backend api get result. Convert result to json
        */
-      SearchResults sr = elasticClient.searchByRange(queryItem,Integer.parseInt(from), Integer.parseInt(to));
+      if (adv.length() == 0) {
+         sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
+      } else {
+         if (queryminPrice.length() == 0) {
+            queryminPrice = "0";
+         }
+         if (queryminPrice.length() == 0) {
+            queryminPrice = "100000";
+         }
+         sr = elasticClient.searchByRange(queryGenre, queryTitle, queryISBN, queryAuthor, Double.parseDouble(queryminPrice), Double.parseDouble(querymaxPrice));
+      }
+      
+      
       /*
-       * sr to json,json to string to queryItem + from + ":" +to+"\n"
-       * 
+       * sr to json,json to string to queryItem + from + ":" +to+"\n" 
        */
 
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
