@@ -14,6 +14,6 @@ public class ElasticClientTest
       ElasticClient test = new ElasticClient();
       String query = "Machine Learning";
       //test.searchByRange(query, 0, 100);
-      test.searchByRange("", "Harry", "1617290181", "Peter Harrington", 0, 10000);
+      test.searchByRange("", "Harry", "", "", "", "");
    }
 }

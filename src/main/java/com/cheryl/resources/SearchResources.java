@@ -49,8 +49,8 @@ public class SearchResources {
          @QueryParam("title") @DefaultValue("") final String queryTitle,
          @QueryParam("isbn") @DefaultValue("") final String queryISBN,
          @QueryParam("author") @DefaultValue("") final String queryAuthor,
-         @QueryParam("minPrice") @DefaultValue("") String queryminPrice,
-         @QueryParam("maxPrice") @DefaultValue("") String querymaxPrice,
+         @QueryParam("minPrice") @DefaultValue("") final String queryminPrice,
+         @QueryParam("maxPrice") @DefaultValue("") final String querymaxPrice,
          @QueryParam("adv") @DefaultValue("") final String adv
          ) throws JsonProcessingException{
       /*
@@ -59,22 +59,18 @@ public class SearchResources {
       if (adv.length() == 0) {
          sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
       } else {
-         if (queryminPrice.length() == 0) {
-            queryminPrice = "0";
-         }
-         if (queryminPrice.length() == 0) {
-            queryminPrice = "100000";
-         }
-         sr = elasticClient.searchByRange(queryGenre, queryTitle, queryISBN, queryAuthor, Double.parseDouble(queryminPrice), Double.parseDouble(querymaxPrice));
+         sr = elasticClient.searchByRange(queryGenre, queryTitle, queryISBN, queryAuthor, queryminPrice, querymaxPrice);
       }
-      
-      
+            
       /*
        * sr to json,json to string to queryItem + from + ":" +to+"\n" 
        */
 
+      if (sr == null) {
+         System.out.println("null");
+      }
+      
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
-
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
       
@@ -96,6 +92,7 @@ public class SearchResources {
       }
       
       String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
+      System.out.println("in resources: " + arrayFinalJson);
       
 //    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure

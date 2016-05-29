@@ -63,6 +63,7 @@ public class ElasticClient {
 	}
 	
 	// for basic interface  
+
 	public SearchResults searchByRange(String query, int start, int end) {
 	     
 	   //MatchQueryBuilder qb = matchQuery("title", query); 
@@ -86,14 +87,14 @@ public class ElasticClient {
             .execute()
             .actionGet();
 	   
+	   System.out.println("------------------------------");
 	   SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.println("Current results: " + results.length);
+      System.out.println("in elasticClient for Basic, Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
       
       for (SearchHit hit : results) {
-          System.out.println("------------------------------");
           Map<String,Object> result = hit.getSource();
           StringBuilder excerptBuilder = new StringBuilder();
           for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
@@ -115,12 +116,36 @@ public class ElasticClient {
       	  
 		return new SearchResults(elasticResponse);
 	}
+
 	
-	
+	//for advanced interface
 	public SearchResults searchByRange(String queryGenre, String queryTitle, 
-	      String queryISBN, String queryAuthor, double queryminPrice, double querymaxPrice) {
+	      String queryISBN, String queryAuthor, String queryminPrice, String querymaxPrice) {
 	   
-	   //MatchQueryBuilder qb = matchQuery("title", query); 
+	   if (queryGenre.length() == 0) {
+	      queryGenre = "*";
+	   }
+	   
+      if (queryminPrice.length() == 0) {
+         queryminPrice = "0";
+      }
+      
+      if (querymaxPrice.length() == 0) {
+         querymaxPrice = "100000";
+      }
+	   
+      if (queryTitle.length() == 0) {
+         queryTitle = "*";
+      }
+      
+      if (queryISBN.length() == 0) {
+         queryISBN = "*";
+      }
+      
+      if (queryAuthor.length() == 0) {
+         queryAuthor = "*";
+      }
+	   
       BoolQueryBuilder qb = QueryBuilders.boolQuery()
             //.must(QueryBuilders.matchQuery(queryGenre, "catagory"))
             .should(QueryBuilders.matchQuery("title", queryTitle))
@@ -145,14 +170,14 @@ public class ElasticClient {
             .execute()
             .actionGet();
       
+      System.out.println("------------------------------");
       SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.println("Current results: " + results.length);
+      System.out.println("in elasticClient for Adv: Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
       
       for (SearchHit hit : results) {
-          System.out.println("------------------------------");
           Map<String,Object> result = hit.getSource();
           StringBuilder excerptBuilder = new StringBuilder();
           for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
