@@ -166,7 +166,7 @@ public class ElasticClient {
             .setSearchType(SearchType.QUERY_THEN_FETCH)
             .setQuery(qb)
             .addSort("price", SortOrder.ASC) // sort by price
-            .addSort("review", SortOrder.DESC)
+            //.addSort("review", SortOrder.DESC)
             .addHighlightedField("title") //snippet
             .addHighlightedField("description")
             .execute()
