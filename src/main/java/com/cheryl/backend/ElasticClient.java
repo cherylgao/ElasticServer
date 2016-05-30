@@ -147,15 +147,16 @@ public class ElasticClient {
       }
 	   
       BoolQueryBuilder qb = QueryBuilders.boolQuery()
-            //.must(QueryBuilders.matchQuery(queryGenre, "catagory"))
+            .should(QueryBuilders.matchQuery("genre", queryGenre))
             .should(QueryBuilders.matchQuery("title", queryTitle))
             .should(QueryBuilders.multiMatchQuery(queryISBN, "ISBN1", "ISBN2"))
-            .should(QueryBuilders.matchQuery("author", queryAuthor));
-            //.should(QueryBuilders.rangeQuery("price")
-            //      .from(queryminPrice)
-            //      .to(querymaxPrice)
-            //      .includeLower(true)
-            //      .includeUpper(true));
+            .should(QueryBuilders.matchQuery("author", queryAuthor))
+            .should(QueryBuilders.rangeQuery("price")
+                  .from(queryminPrice)
+                  .to(querymaxPrice)
+                  .includeLower(true)
+                  .includeUpper(true))
+            .minimumNumberShouldMatch(1);
       
         //fuzzyQuery   
       
@@ -172,7 +173,7 @@ public class ElasticClient {
       
       System.out.println("------------------------------");
       SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.println("in elasticClient for Adv: Current results: " + results.length);
+      System.out.print("in elasticClient for Adv: Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");

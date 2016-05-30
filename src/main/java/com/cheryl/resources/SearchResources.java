@@ -92,7 +92,7 @@ public class SearchResources {
       }
       
       String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      System.out.println("in resources: " + arrayFinalJson);
+      System.out.println("in returnFrontEnd: " + arrayFinalJson);
       
 //    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
