@@ -2,6 +2,7 @@ package com.cheryl.resources;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.directory.SearchResult;
@@ -25,9 +26,15 @@ import com.cheryl.backend.ElasticClient;
 import com.cheryl.bean.SearchResults;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+
+/*import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;*/
+
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 @Component
 @Path("/")
@@ -36,7 +43,7 @@ public class SearchResources {
    @Autowired
    private ElasticClient elasticClient;
    private SearchResults sr;
-   private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+   //private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
   
    @GET
    @Path("search")
@@ -73,22 +80,23 @@ public class SearchResources {
       arrayJson.append("[");
       */
       
-      ArrayList<Map<String, Object>> resTest = new ArrayList<>();
-     
+     // ArrayList<Map<String, Object>> resTest = new ArrayList<>();
+      JSONArray array = new JSONArray();
       
    //   JsonObject value = Json.createObjectBuilder();
       
       for (SearchHit hit : results) {
           Map<String,Object> result = hit.getSource();
-          StringBuilder excerptBuilder = new StringBuilder();
+         /* StringBuilder excerptBuilder = new StringBuilder();
           for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
               for (Text text : highlight.getValue().fragments()) { 
                   excerptBuilder.append(text.string()); 
                   excerptBuilder.append(" ... "); 
               } 
-          } 
-          resTest.add(result);
-          
+          } */
+         // resTest.add(result);
+          JSONObject object = new JSONObject(result); //Json.createObjectBuilder().build();
+          array.put(object);
           /*
           String resultJson = gson.toJson(result);
           String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
@@ -99,17 +107,17 @@ public class SearchResources {
           */
           
       }
-           
+      String resultJsonString = array.toString();     
      // String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      String restTestJson = gson.toJson(resTest);
+     // String restTestJson = gson.toJson(resTest);
       
-      // System.out.println(restTestJson);
+      System.out.println("Json: " + resultJsonString);
       
       // JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
       
      // resumeWithResponse(ar, arrayFinalJson);
-      resumeWithResponse(ar, restTestJson);
+      resumeWithResponse(ar, resultJsonString);
       
    }
 
