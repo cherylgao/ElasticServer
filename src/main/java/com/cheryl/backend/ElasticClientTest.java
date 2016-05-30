@@ -15,6 +15,6 @@ public class ElasticClientTest
       ElasticClient test = new ElasticClient();
       String query = "Alexander Hamilton";
       //test.searchByRange(query, 0, 100);
-      test.searchByRange("", "Harry", "", "", "", "");
+      test.searchByRange("", "James Alexander", "", "", "", "");
    }
 }

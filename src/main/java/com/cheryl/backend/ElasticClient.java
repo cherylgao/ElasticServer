@@ -148,7 +148,7 @@ public class ElasticClient {
       }
 	   
       BoolQueryBuilder qb = QueryBuilders.boolQuery()
-            .should(QueryBuilders.matchQuery("genre", queryGenre))
+            //.should(QueryBuilders.matchQuery("genre", queryGenre))
             .should(QueryBuilders.matchQuery("title", queryTitle))
             .should(QueryBuilders.multiMatchQuery(queryISBN, "ISBN10", "ISBN13"))
             .should(QueryBuilders.matchQuery("author", queryAuthor))
