@@ -1,5 +1,6 @@
 package com.cheryl.resources;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -84,7 +85,7 @@ public class SearchResources {
       JSONArray array = new JSONArray();
       
    //   JsonObject value = Json.createObjectBuilder();
-      
+      List<Object> list = new ArrayList<>();
       for (SearchHit hit : results) {
           Map<String,Object> result = hit.getSource();
          /* StringBuilder excerptBuilder = new StringBuilder();
@@ -95,8 +96,8 @@ public class SearchResources {
               } 
           } */
          // resTest.add(result);
-          JSONObject object = new JSONObject(result); //Json.createObjectBuilder().build();
-          array.put(object);
+          //JSONObject object = new JSONObject(result); //Json.createObjectBuilder().build();
+          //array.put(object);
           /*
           String resultJson = gson.toJson(result);
           String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
@@ -106,8 +107,13 @@ public class SearchResources {
           resTest.add(result);
           */
           
+          list.add(result);
       }
-      String resultJsonString = array.toString();     
+      ObjectMapper mapper = new ObjectMapper();
+      String val = mapper.writeValueAsString(list);
+      //JSONObject object = new JSONObject();
+      //object.append("response", val);
+      String resultJsonString = val.trim();     
      // String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
      // String restTestJson = gson.toJson(resTest);
       
@@ -120,9 +126,14 @@ public class SearchResources {
       resumeWithResponse(ar, resultJsonString);
       
    }
-
+   
+   private static void resumeWithResponse(AsyncResponse ar, JSONObject res){
+	      Response response = Response.ok(res).type("application/json; charset=utf-8").header("content-length", res.length()).header("Access-Control-Allow-Origin", "*").build();
+	      ar.resume(response);
+   }
+   
    private static void resumeWithResponse(AsyncResponse ar, String res){
-      Response response = Response.ok(res).type("application/json; charset=utf-8").header("content-length", res.length()).header("Access-Control-Allow-Origin", "*").build();
+      Response response = Response.ok(res).type("application/json; charset=utf-8").header("content-length", res.getBytes(StandardCharsets.UTF_8).length).header("Access-Control-Allow-Origin", "*").build();
       ar.resume(response);
    }
 }
