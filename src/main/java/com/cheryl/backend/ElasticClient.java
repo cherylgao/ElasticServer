@@ -18,6 +18,8 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 
@@ -32,6 +34,7 @@ import org.elasticsearch.common.text.Text;
 
 public class ElasticClient {
    private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+   private static final Gson gson2 = new GsonBuilder().disableHtmlEscaping().create();
    
 	private Client client;
 	public ElasticClient(){
@@ -73,12 +76,23 @@ public class ElasticClient {
 	   
 	     //optional to do fuzzyQuery  
 	   
-	   //int size = end - start + 1;
+	   int size = end - start + 1;
+	   
+	   /*
+	   SearchResponse response = client().prepareSearch("idx").setTypes("type")
+            .setQuery(matchAllQuery())
+            .addAggregation(terms("keys").field("key").size(3).order(Terms.Order.count(false)))
+            .execute().actionGet();
+
+Terms  terms = response.getAggregations().get("keys");
+Collection<Terms.Bucket> buckets = terms.getBuckets();
+assertThat(buckets.size(), equalTo(3));
+*/
 	   
 	   SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
             .setSearchType(SearchType.QUERY_THEN_FETCH)
-            .setQuery(qb)
+            .setQuery(qb)            
             //.setFrom(start)
             //.setSize(size)
             .addSort("price", SortOrder.ASC) // sort by price
@@ -90,6 +104,7 @@ public class ElasticClient {
 	   
 	   System.out.println("------------------------------");
 	   SearchHit[] results = elasticResponse.getHits().getHits();
+	   /*
       System.out.println("ElasticClient for Basic, Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
@@ -114,6 +129,39 @@ public class ElasticClient {
       
       String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
       System.out.println(arrayFinalJson);
+      */
+      
+      System.out.println("------------------------------");
+      System.out.println("Return to Front End, Current results: " + results.length);
+      
+      StringBuilder arrayJson = new StringBuilder();
+      arrayJson.append("[");
+      
+      ArrayList<Map<String, Object>> test = new ArrayList<>();
+      
+      for (SearchHit hit : results) {
+          Map<String,Object> result = hit.getSource();
+          StringBuilder excerptBuilder = new StringBuilder();
+          for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+              for (Text text : highlight.getValue().fragments()) { 
+                  excerptBuilder.append(text.string()); 
+                  excerptBuilder.append(" ... "); 
+              } 
+          } 
+
+          String resultJson = gson.toJson(result);
+          String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
+                + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
+          arrayJson.append(resultWithSinppet);
+          arrayJson.append(",");
+          test.add(result);
+      }
+      
+      String testFinalJson = gson.toJson(test);
+      
+      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
+      System.out.println(arrayFinalJson);
+      
       	  
 		return new SearchResults(elasticResponse);
 	}

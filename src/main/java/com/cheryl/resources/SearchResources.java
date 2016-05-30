@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 @Component
 @Path("/")
@@ -36,8 +37,7 @@ public class SearchResources {
    private ElasticClient elasticClient;
    private SearchResults sr;
    private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-   
-
+  
    @GET
    @Path("search")
    public void get(@Suspended final AsyncResponse ar,
@@ -68,8 +68,15 @@ public class SearchResources {
       System.out.println("------------------------------");
       System.out.println("Return to Front End, Current results: " + results.length);
       
+      /*
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
+      */
+      
+      ArrayList<Map<String, Object>> resTest = new ArrayList<>();
+     
+      
+   //   JsonObject value = Json.createObjectBuilder();
       
       for (SearchHit hit : results) {
           Map<String,Object> result = hit.getSource();
@@ -80,21 +87,30 @@ public class SearchResources {
                   excerptBuilder.append(" ... "); 
               } 
           } 
-
+          resTest.add(result);
+          
+          /*
           String resultJson = gson.toJson(result);
           String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
                 + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
           arrayJson.append(resultWithSinppet);
           arrayJson.append(",");
+          resTest.add(result);
+          */
+          
       }
+           
+     // String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
+      String restTestJson = gson.toJson(resTest);
       
-      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      System.out.println(arrayFinalJson);
+      // System.out.println(restTestJson);
       
-//    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
+      // JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
       
-      resumeWithResponse(ar, arrayFinalJson);
+     // resumeWithResponse(ar, arrayFinalJson);
+      resumeWithResponse(ar, restTestJson);
+      
    }
 
    private static void resumeWithResponse(AsyncResponse ar, String res){
