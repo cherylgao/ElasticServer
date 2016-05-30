@@ -66,22 +66,23 @@ public class ElasticClient {
 
 	public SearchResults searchByRange(String query, int start, int end) {
 	     
-	   //MatchQueryBuilder qb = matchQuery("title", query); 
 	   MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
 	         query,     // Text you are looking for
-	         "title", "description", "url", "author", "ISBN1", "ISBN2", "tag" // Fields you query on
+	         "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
 	         );
 	   
 	     //optional to do fuzzyQuery  
-	   int size = end - start + 1;
+	   
+	   //int size = end - start + 1;
 	   
 	   SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
             .setSearchType(SearchType.QUERY_THEN_FETCH)
             .setQuery(qb)
-            .setFrom(start)
-            .setSize(size)
+            //.setFrom(start)
+            //.setSize(size)
             .addSort("price", SortOrder.ASC) // sort by price
+            //.addSort("review", SortOrder.DESC)
             .addHighlightedField("title") //snippet
             .addHighlightedField("description")
             .execute()
@@ -89,7 +90,7 @@ public class ElasticClient {
 	   
 	   System.out.println("------------------------------");
 	   SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.println("in elasticClient for Basic, Current results: " + results.length);
+      System.out.println("ElasticClient for Basic, Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
@@ -160,12 +161,12 @@ public class ElasticClient {
       
         //fuzzyQuery   
       
-      
       SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
             .setSearchType(SearchType.QUERY_THEN_FETCH)
             .setQuery(qb)
-            //.addSort("price", SortOrder.ASC) // sort by price
+            .addSort("price", SortOrder.ASC) // sort by price
+            .addSort("review", SortOrder.DESC)
             .addHighlightedField("title") //snippet
             .addHighlightedField("description")
             .execute()
@@ -173,7 +174,7 @@ public class ElasticClient {
       
       System.out.println("------------------------------");
       SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.print("in elasticClient for Adv: Current results: " + results.length);
+      System.out.print("elasticClient for Adv: Current results: " + results.length);
       
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");

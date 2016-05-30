@@ -53,24 +53,21 @@ public class SearchResources {
          @QueryParam("maxPrice") @DefaultValue("") final String querymaxPrice,
          @QueryParam("adv") @DefaultValue("") final String adv
          ) throws JsonProcessingException{
-      /*
-       * TO DO: call backend api get result. Convert result to json
-       */
-      if (adv.length() == 0) {
+
+      if (adv == null || adv.length() == 0) {
          sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
       } else {
          sr = elasticClient.searchByRange(queryGenre, queryTitle, queryISBN, queryAuthor, queryminPrice, querymaxPrice);
       }
-            
-      /*
-       * sr to json,json to string to queryItem + from + ":" +to+"\n" 
-       */
-
+               
       if (sr == null) {
          System.out.println("null");
       }
       
       SearchHit[] results = sr.getElasticResponse().getHits().getHits();
+      System.out.println("------------------------------");
+      System.out.println("Return to Front End, Current results: " + results.length);
+      
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
       
@@ -92,7 +89,7 @@ public class SearchResources {
       }
       
       String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      System.out.println("in returnFrontEnd: " + arrayFinalJson);
+      System.out.println(arrayFinalJson);
       
 //    JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
