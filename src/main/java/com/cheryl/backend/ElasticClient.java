@@ -36,6 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
 
 import org.elasticsearch.common.text.Text; 
+import org.elasticsearch.common.unit.Fuzziness;
 import org.json.JSONArray;
 
 public class ElasticClient {
@@ -77,13 +78,16 @@ public class ElasticClient {
                //.addSort("review", SortOrder.DESC)
                .addHighlightedField("title") //snippet
                .addHighlightedField("description")
+               .addHighlightedField("author")
+               .addHighlightedField("ISBN10")
+               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       } else {
          MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
                query,     // Text you are looking for
                "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
-               );
+               ).fuzziness(Fuzziness.AUTO);
 
          elasticResponse = client.prepareSearch("books")
                .setTypes("book")
@@ -93,13 +97,16 @@ public class ElasticClient {
                .setSize(size)
                .addHighlightedField("title") //snippet
                .addHighlightedField("description")
+               .addHighlightedField("author")
+               .addHighlightedField("ISBN10")
+               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       }
 
       SearchHit[] results = elasticResponse.getHits().getHits();
       List<Object> list = new ArrayList<>();
-      
+
       for (SearchHit hit : results) {
          Map<String,Object> result = hit.getSource();
          StringBuilder excerptBuilder = new StringBuilder();
@@ -112,7 +119,7 @@ public class ElasticClient {
          result.put("snippet", excerptBuilder.toString().trim());
          list.add(result);
       }
-      
+
       ObjectMapper mapper = new ObjectMapper();
       String val = mapper.writeValueAsString(list);
 
@@ -142,13 +149,16 @@ public class ElasticClient {
                .setSize(size)
                .addHighlightedField("title") //snippet
                .addHighlightedField("description")
+               .addHighlightedField("author")
+               .addHighlightedField("ISBN10")
+               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       } else if (queryGenre == null || queryGenre.length() == 0) {
          MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
                query,     // Text you are looking for
                "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
-               );
+               ).fuzziness(Fuzziness.AUTO);
 
          elasticResponse = client.prepareSearch("books")
                .setTypes("book")
@@ -158,6 +168,9 @@ public class ElasticClient {
                .setSize(size)
                .addHighlightedField("title") //snippet
                .addHighlightedField("description")
+               .addHighlightedField("author")
+               .addHighlightedField("ISBN10")
+               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       } else if (query == null || query.length() == 0) {
@@ -177,7 +190,7 @@ public class ElasticClient {
          MultiMatchQueryBuilder qb2 = QueryBuilders.multiMatchQuery(
                query,     // Text you are looking for
                "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
-               );
+               ).fuzziness(Fuzziness.AUTO);
          BoolQueryBuilder qb = QueryBuilders.boolQuery()
                .must(qb1)
                .should(qb2);
@@ -189,6 +202,9 @@ public class ElasticClient {
                .setSize(size)
                .addHighlightedField("title") //snippet
                .addHighlightedField("description")
+               .addHighlightedField("author")
+               .addHighlightedField("ISBN10")
+               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       }
@@ -196,7 +212,7 @@ public class ElasticClient {
 
       SearchHit[] results = elasticResponse.getHits().getHits();
       List<Object> list = new ArrayList<>();
-      
+
       for (SearchHit hit : results) {
          Map<String,Object> result = hit.getSource();
          StringBuilder excerptBuilder = new StringBuilder();
@@ -209,7 +225,7 @@ public class ElasticClient {
          result.put("snippet", excerptBuilder.toString().trim());
          list.add(result);
       }
-      
+
       ObjectMapper mapper = new ObjectMapper();
       String val = mapper.writeValueAsString(list);
 
@@ -237,15 +253,21 @@ public class ElasticClient {
          maxPriceDouble = Double.parseDouble(querymaxPrice);
       }
 
+      MatchAllQueryBuilder qbAll = QueryBuilders.matchAllQuery();
+      
       BoolQueryBuilder qbISBN = QueryBuilders.boolQuery()          
             .should(QueryBuilders.termQuery("ISBN10", queryISBN))
             .should(QueryBuilders.termQuery("ISBN13", queryISBN))
             .minimumNumberShouldMatch(1);
+      
+      System.out.println("queryTitle: " + queryTitle);
+      
+      MatchQueryBuilder qbTitle = QueryBuilders.matchPhraseQuery("title", queryTitle).fuzziness(Fuzziness.AUTO);
 
       BoolQueryBuilder qb = QueryBuilders.boolQuery()
-            .must((queryTitle.isEmpty() || queryTitle.length() == 0) ? QueryBuilders.matchAllQuery() : QueryBuilders.fuzzyQuery("title", queryTitle))
-            .must((queryISBN.isEmpty() || queryISBN.length() == 0) ? QueryBuilders.matchAllQuery() : qbISBN)
-            .must((queryAuthor.isEmpty() || queryAuthor.length() == 0) ? QueryBuilders.matchAllQuery() :QueryBuilders.matchQuery("author", queryAuthor))
+            .must((queryTitle.isEmpty() || queryTitle.length() == 0) ? qbAll : qbTitle)
+            .must((queryISBN.isEmpty() || queryISBN.length() == 0) ? qbAll : qbISBN)
+            .must((queryAuthor.isEmpty() || queryAuthor.length() == 0) ? qbAll : QueryBuilders.matchQuery("author", queryAuthor).fuzziness(Fuzziness.AUTO))
             .must(QueryBuilders.rangeQuery("price")
                   .from(minPriceDouble)
                   .to(maxPriceDouble)
@@ -260,12 +282,15 @@ public class ElasticClient {
             .setSize(size)
             .addHighlightedField("title") //snippet
             .addHighlightedField("description")
+            .addHighlightedField("author")
+            .addHighlightedField("ISBN10")
+            .addHighlightedField("ISBN13")
             .execute()
             .actionGet();
 
       SearchHit[] results = elasticResponse.getHits().getHits();
       List<Object> list = new ArrayList<>();
-      
+
       for (SearchHit hit : results) {
          Map<String,Object> result = hit.getSource();
          StringBuilder excerptBuilder = new StringBuilder();
@@ -278,7 +303,7 @@ public class ElasticClient {
          result.put("snippet", excerptBuilder.toString().trim());
          list.add(result);
       }
-      
+
       ObjectMapper mapper = new ObjectMapper();
       String val = mapper.writeValueAsString(list);
 

@@ -11,9 +11,10 @@ public class ElasticClientTest {
    @Test
    public void test() throws JsonProcessingException {
       ElasticClient test = new ElasticClient();
-      String query = "Alexander Hamilto";
-      test.searchByRange(query, 0, 100);
+      String query = "You Are a Badass: How to Stop Doubting Your Greatness and Start Living an Awesome Life";
+      //test.searchByRange(query, 0, 100);
       //test.searchByRange("", query, 0, 100);
-      //test.searchByRange("", "9780545162074", "", "", "", 0, 100);
+      test.searchByRange("You Are a Badass: How to Stop Doubting Your Greatness and Start Living an Awesome Life", "", "", "", "", 0, 100);
+      //
    }
 }
