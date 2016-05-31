@@ -174,6 +174,7 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
+               .addHighlightedField("genre").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
                .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
