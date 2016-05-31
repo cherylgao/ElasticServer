@@ -74,13 +74,6 @@ public class ElasticClient {
                .setQuery(qbAll)            
                .setFrom(start)
                .setSize(size)
-               //.addSort("price", SortOrder.ASC) // sort by price
-               //.addSort("review", SortOrder.DESC)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
-               .addHighlightedField("author")
-               .addHighlightedField("ISBN10")
-               .addHighlightedField("ISBN13")
                .execute()
                .actionGet();
       } else {
@@ -95,11 +88,11 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
-               .addHighlightedField("author")
-               .addHighlightedField("ISBN10")
-               .addHighlightedField("ISBN13")
+               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN10").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN13").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       }
@@ -147,11 +140,11 @@ public class ElasticClient {
                .setQuery(qbAll)            
                .setFrom(start)
                .setSize(size)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
-               .addHighlightedField("author")
-               .addHighlightedField("ISBN10")
-               .addHighlightedField("ISBN13")
+               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN10").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN13").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       } else if (queryGenre == null || queryGenre.length() == 0) {
@@ -166,11 +159,11 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
-               .addHighlightedField("author")
-               .addHighlightedField("ISBN10")
-               .addHighlightedField("ISBN13")
+               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN10").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN13").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       } else if (query == null || query.length() == 0) {
@@ -181,8 +174,8 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
+               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       } else {
@@ -200,11 +193,11 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
-               .addHighlightedField("title") //snippet
-               .addHighlightedField("description")
-               .addHighlightedField("author")
-               .addHighlightedField("ISBN10")
-               .addHighlightedField("ISBN13")
+               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN10").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+               .addHighlightedField("ISBN13").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       }
@@ -280,11 +273,11 @@ public class ElasticClient {
             .setQuery(qb)
             .setFrom(start)
             .setSize(size)
-            .addHighlightedField("title") //snippet
-            .addHighlightedField("description")
-            .addHighlightedField("author")
-            .addHighlightedField("ISBN10")
-            .addHighlightedField("ISBN13")
+            .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
+            .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+            .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+            .addHighlightedField("ISBN10").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
+            .addHighlightedField("ISBN13").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
             .execute()
             .actionGet();
 
