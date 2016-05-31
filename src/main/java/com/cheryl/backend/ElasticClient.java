@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.action.search.SearchResponse;
@@ -12,10 +13,14 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.FuzzyQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -31,114 +36,269 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
 
 import org.elasticsearch.common.text.Text; 
+import org.json.JSONArray;
 
 public class ElasticClient {
-   private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-   private static final Gson gson2 = new GsonBuilder().disableHtmlEscaping().create();
-   
-	private Client client;
-	public ElasticClient(){
-		try {
-			client = TransportClient
-					.builder()
-					.build()
-					.addTransportAddress(
-							new InetSocketTransportAddress(InetAddress
-									.getByName("localhost"), 9300));
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		/*
-		client.admin().indices().prepareCreate("twitter5")   
-      .addMapping("tweet", "{\n" +                
-              "    \"tweet\": {\n" +
-              "      \"properties\": {\n" +
-              "        \"message\": {\n" +
-              "          \"type\": \"string\"\n" +
-              "        }\n" +
-              "      }\n" +
-              "    }\n" +
-              "  }")
-      .get();
-      */
-	}
-	
-	// for basic interface  
 
-	public SearchResults searchByRange(String query, int start, int end) {
-	     
-	   MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
-	         query,     // Text you are looking for
-	         "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
-	         );
-	   
-	     //optional to do fuzzyQuery  
-	   
-	   int size = end - start + 1;
-	   
-	   /*
-	   SearchResponse response = client().prepareSearch("idx").setTypes("type")
-            .setQuery(matchAllQuery())
-            .addAggregation(terms("keys").field("key").size(3).order(Terms.Order.count(false)))
-            .execute().actionGet();
+   private Client client;
+   private SearchResponse elasticResponse;;
 
-Terms  terms = response.getAggregations().get("keys");
-Collection<Terms.Bucket> buckets = terms.getBuckets();
-assertThat(buckets.size(), equalTo(3));
-*/
-	   
-	   SearchResponse elasticResponse = client.prepareSearch("books")
+   public ElasticClient(){
+      try {
+         client = TransportClient
+               .builder()
+               .build()
+               .addTransportAddress(
+                     new InetSocketTransportAddress(InetAddress
+                           .getByName("localhost"), 9300));
+      } catch (UnknownHostException e) {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+
+      //client.admin().indices().prepareRefresh().execute().actionGet();		
+   }
+
+   // for basic interface  
+   public SearchResults searchByRange(String query, int start, int end) throws JsonProcessingException {
+
+      int size = end - start + 1;
+
+      // if query is empty, return all books; otherwise, return match query      
+      if (query == null || query.length() == 0) {
+         MatchAllQueryBuilder qbAll = QueryBuilders.matchAllQuery();
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qbAll)            
+               .setFrom(start)
+               .setSize(size)
+               //.addSort("price", SortOrder.ASC) // sort by price
+               //.addSort("review", SortOrder.DESC)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      } else {
+         MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
+               query,     // Text you are looking for
+               "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
+               );
+
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qb)            
+               .setFrom(start)
+               .setSize(size)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      }
+
+      SearchHit[] results = elasticResponse.getHits().getHits();
+      List<Object> list = new ArrayList<>();
+      
+      for (SearchHit hit : results) {
+         Map<String,Object> result = hit.getSource();
+         StringBuilder excerptBuilder = new StringBuilder();
+         for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+            for (Text text : highlight.getValue().fragments()) { 
+               excerptBuilder.append(text.string()); 
+               excerptBuilder.append(" ... "); 
+            } 
+         } 
+         result.put("snippet", excerptBuilder.toString().trim());
+         list.add(result);
+      }
+      
+      ObjectMapper mapper = new ObjectMapper();
+      String val = mapper.writeValueAsString(list);
+
+      String resultJsonString = val.trim();
+      System.out.println("ElasticClient, Basic Search; Current Result: " + results.length); 
+      System.out.println(resultJsonString);
+
+      return new SearchResults(elasticResponse);
+   }
+
+
+   // for basic interface2
+   // if both queryGenre and query are empty, return all books
+   // if queryGenre is empty, return match of query
+   // if query is empty, return term match of genre
+   // otherwise, return match both query and genre
+   public SearchResults searchByRange(String queryGenre, String query, int start, int end) throws JsonProcessingException {
+      int size = end - start + 1;
+
+      if ((queryGenre == null || queryGenre.length() == 0) && (query == null || query.length() == 0)) {
+         MatchAllQueryBuilder qbAll = QueryBuilders.matchAllQuery();
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qbAll)            
+               .setFrom(start)
+               .setSize(size)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      } else if (queryGenre == null || queryGenre.length() == 0) {
+         MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(
+               query,     // Text you are looking for
+               "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
+               );
+
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qb)            
+               .setFrom(start)
+               .setSize(size)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      } else if (query == null || query.length() == 0) {
+         TermQueryBuilder qb = QueryBuilders.termQuery("genre", queryGenre);         
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qb)            
+               .setFrom(start)
+               .setSize(size)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      } else {
+         TermQueryBuilder qb1 = QueryBuilders.termQuery("genre", queryGenre); 
+         MultiMatchQueryBuilder qb2 = QueryBuilders.multiMatchQuery(
+               query,     // Text you are looking for
+               "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
+               );
+         BoolQueryBuilder qb = QueryBuilders.boolQuery()
+               .must(qb1)
+               .should(qb2);
+         elasticResponse = client.prepareSearch("books")
+               .setTypes("book")
+               .setSearchType(SearchType.QUERY_THEN_FETCH)
+               .setQuery(qb)            
+               .setFrom(start)
+               .setSize(size)
+               .addHighlightedField("title") //snippet
+               .addHighlightedField("description")
+               .execute()
+               .actionGet();
+      }
+
+
+      SearchHit[] results = elasticResponse.getHits().getHits();
+      List<Object> list = new ArrayList<>();
+      
+      for (SearchHit hit : results) {
+         Map<String,Object> result = hit.getSource();
+         StringBuilder excerptBuilder = new StringBuilder();
+         for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+            for (Text text : highlight.getValue().fragments()) { 
+               excerptBuilder.append(text.string()); 
+               excerptBuilder.append(" ... "); 
+            } 
+         } 
+         result.put("snippet", excerptBuilder.toString().trim());
+         list.add(result);
+      }
+      
+      ObjectMapper mapper = new ObjectMapper();
+      String val = mapper.writeValueAsString(list);
+
+      String resultJsonString = val.trim();
+      System.out.println("ElasticClient, Basic Search; Current Result: " + results.length); 
+      System.out.println(resultJsonString);
+      return new SearchResults(elasticResponse);
+   }
+
+
+   //for advanced interface
+   public SearchResults searchByRange(String queryTitle, 
+         String queryISBN, String queryAuthor, String queryminPrice, 
+         String querymaxPrice, int start, int end) throws JsonProcessingException {
+
+      int size = end - start + 1;
+      double minPriceDouble = 0.0;
+      double maxPriceDouble = 10000000.0;
+
+      if (!queryminPrice.isEmpty() && queryminPrice.length() != 0) {
+         minPriceDouble = Double.parseDouble(queryminPrice);
+      }
+
+      if (!querymaxPrice.isEmpty() && querymaxPrice.length() != 0) {
+         maxPriceDouble = Double.parseDouble(querymaxPrice);
+      }
+
+      BoolQueryBuilder qbISBN = QueryBuilders.boolQuery()          
+            .should(QueryBuilders.termQuery("ISBN10", queryISBN))
+            .should(QueryBuilders.termQuery("ISBN13", queryISBN))
+            .minimumNumberShouldMatch(1);
+
+      BoolQueryBuilder qb = QueryBuilders.boolQuery()
+            .must((queryTitle.isEmpty() || queryTitle.length() == 0) ? QueryBuilders.matchAllQuery() : QueryBuilders.fuzzyQuery("title", queryTitle))
+            .must((queryISBN.isEmpty() || queryISBN.length() == 0) ? QueryBuilders.matchAllQuery() : qbISBN)
+            .must((queryAuthor.isEmpty() || queryAuthor.length() == 0) ? QueryBuilders.matchAllQuery() :QueryBuilders.matchQuery("author", queryAuthor))
+            .must(QueryBuilders.rangeQuery("price")
+                  .from(minPriceDouble)
+                  .to(maxPriceDouble)
+                  .includeLower(true)
+                  .includeUpper(true)); 
+
+      SearchResponse elasticResponse = client.prepareSearch("books")
             .setTypes("book")
             .setSearchType(SearchType.QUERY_THEN_FETCH)
-            .setQuery(qb)            
-            //.setFrom(start)
-            //.setSize(size)
-            .addSort("price", SortOrder.ASC) // sort by price
-            //.addSort("review", SortOrder.DESC)
+            .setQuery(qb)
+            .setFrom(start)
+            .setSize(size)
             .addHighlightedField("title") //snippet
             .addHighlightedField("description")
             .execute()
             .actionGet();
-	   
-	   System.out.println("------------------------------");
-	   SearchHit[] results = elasticResponse.getHits().getHits();
-	   /*
-      System.out.println("ElasticClient for Basic, Current results: " + results.length);
-      
-      StringBuilder arrayJson = new StringBuilder();
-      arrayJson.append("[");
+
+      SearchHit[] results = elasticResponse.getHits().getHits();
+      List<Object> list = new ArrayList<>();
       
       for (SearchHit hit : results) {
-          Map<String,Object> result = hit.getSource();
-          StringBuilder excerptBuilder = new StringBuilder();
-          for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
-              for (Text text : highlight.getValue().fragments()) { 
-                  excerptBuilder.append(text.string()); 
-                  excerptBuilder.append(" ... "); 
-              } 
-          } 
-
-          String resultJson = gson.toJson(result);
-          String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
-                + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
-          arrayJson.append(resultWithSinppet);
-          arrayJson.append(",");
+         Map<String,Object> result = hit.getSource();
+         StringBuilder excerptBuilder = new StringBuilder();
+         for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
+            for (Text text : highlight.getValue().fragments()) { 
+               excerptBuilder.append(text.string()); 
+               excerptBuilder.append(" ... "); 
+            } 
+         } 
+         result.put("snippet", excerptBuilder.toString().trim());
+         list.add(result);
       }
       
-      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      System.out.println(arrayFinalJson);
-      */
-      
-      System.out.println("------------------------------");
+      ObjectMapper mapper = new ObjectMapper();
+      String val = mapper.writeValueAsString(list);
+
+      String resultJsonString = val.trim();
+      System.out.println("ElasticClient, Basic Search; Current Result: " + results.length); 
+      System.out.println(resultJsonString);
+      return new SearchResults(elasticResponse);
+   }
+
+}
+
+/*
+ * System.out.println("------------------------------");
       System.out.println("Return to Front End, Current results: " + results.length);
-      
+
       StringBuilder arrayJson = new StringBuilder();
       arrayJson.append("[");
-      
+
       ArrayList<Map<String, Object>> test = new ArrayList<>();
-      
+
       for (SearchHit hit : results) {
           Map<String,Object> result = hit.getSource();
           StringBuilder excerptBuilder = new StringBuilder();
@@ -156,98 +316,45 @@ assertThat(buckets.size(), equalTo(3));
           arrayJson.append(",");
           test.add(result);
       }
-      
+
       String testFinalJson = gson.toJson(test);
-      
+
       String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
       System.out.println(arrayFinalJson);
-      
-      	  
-		return new SearchResults(elasticResponse);
-	}
 
-	
-	//for advanced interface
-	public SearchResults searchByRange(String queryGenre, String queryTitle, 
-	      String queryISBN, String queryAuthor, String queryminPrice, String querymaxPrice) {
-	   
-	   if (queryGenre.length() == 0) {
-	      queryGenre = "*";
-	   }
-	   
-      if (queryminPrice.length() == 0) {
-         queryminPrice = "0";
-      }
-      
-      if (querymaxPrice.length() == 0) {
-         querymaxPrice = "100000";
-      }
-	   
-      if (queryTitle.length() == 0) {
-         queryTitle = "*";
-      }
-      
-      if (queryISBN.length() == 0) {
-         queryISBN = "*";
-      }
-      
-      if (queryAuthor.length() == 0) {
-         queryAuthor = "*";
-      }
-	   
-      BoolQueryBuilder qb = QueryBuilders.boolQuery()
-            //.should(QueryBuilders.matchQuery("genre", queryGenre))
-            .should(QueryBuilders.matchQuery("title", queryTitle))
-            .should(QueryBuilders.multiMatchQuery(queryISBN, "ISBN10", "ISBN13"))
-            .should(QueryBuilders.matchQuery("author", queryAuthor))
-            .should(QueryBuilders.rangeQuery("price")
-                  .from(queryminPrice)
-                  .to(querymaxPrice)
-                  .includeLower(true)
-                  .includeUpper(true))
-            .minimumNumberShouldMatch(1);
-      
-        //fuzzyQuery   
-      
-      SearchResponse elasticResponse = client.prepareSearch("books")
-            .setTypes("book")
-            .setSearchType(SearchType.QUERY_THEN_FETCH)
-            .setQuery(qb)
-            .addSort("price", SortOrder.ASC) // sort by price
-            //.addSort("review", SortOrder.DESC)
-            .addHighlightedField("title") //snippet
-            .addHighlightedField("description")
-            .execute()
-            .actionGet();
-      
-      System.out.println("------------------------------");
-      SearchHit[] results = elasticResponse.getHits().getHits();
-      System.out.print("elasticClient for Adv: Current results: " + results.length);
-      
-      StringBuilder arrayJson = new StringBuilder();
-      arrayJson.append("[");
-      
-      for (SearchHit hit : results) {
-          Map<String,Object> result = hit.getSource();
-          StringBuilder excerptBuilder = new StringBuilder();
-          for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
-              for (Text text : highlight.getValue().fragments()) { 
-                  excerptBuilder.append(text.string()); 
-                  excerptBuilder.append(" ... "); 
-              } 
-          } 
+ */
 
-          String resultJson = gson.toJson(result);
-          String resultWithSinppet = resultJson.substring(0, resultJson.length() - 1) 
-                + ",\"snippet\":\"" + excerptBuilder.toString() + "\"}";           
-          arrayJson.append(resultWithSinppet);
-          arrayJson.append(",");
-      }
-      
-      String arrayFinalJson = arrayJson.substring(0, arrayJson.length() - 1) + "]";      
-      System.out.println(arrayFinalJson);
-           
-      return new SearchResults(elasticResponse);
-   }
-   
-}
+
+/*
+SearchResponse response = client().prepareSearch("idx").setTypes("type")
+      .setQuery(matchAllQuery())
+      .addAggregation(terms("keys").field("key").size(3).order(Terms.Order.count(false)))
+      .execute().actionGet();
+
+Terms  terms = response.getAggregations().get("keys");
+Collection<Terms.Bucket> buckets = terms.getBuckets();
+assertThat(buckets.size(), equalTo(3));
+ */
+
+
+/*
+After submitting a document to an in-memory node, I need to refresh the index:
+
+node.client().admin().indices().prepareRefresh().execute().actionGet();
+calling refresh fixed the problem.
+ */
+
+
+/*
+client.admin().indices().prepareCreate("twitter5")   
+.addMapping("tweet", "{\n" +                
+        "    \"tweet\": {\n" +
+        "      \"properties\": {\n" +
+        "        \"message\": {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      }\n" +
+        "    }\n" +
+        "  }")
+.get();
+ */

@@ -28,12 +28,6 @@ import com.cheryl.bean.SearchResults;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 
-/*import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;*/
-
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -53,19 +47,23 @@ public class SearchResources {
          @QueryParam("query") @DefaultValue("") final String queryItem,
          @QueryParam("from") @DefaultValue("") final String from,
          @QueryParam("to") @DefaultValue("") final String to,
+         @QueryParam("query2") @DefaultValue("") final String query2,
          @QueryParam("genre") @DefaultValue("") final String queryGenre,
          @QueryParam("title") @DefaultValue("") final String queryTitle,
          @QueryParam("isbn") @DefaultValue("") final String queryISBN,
          @QueryParam("author") @DefaultValue("") final String queryAuthor,
          @QueryParam("minPrice") @DefaultValue("") final String queryminPrice,
          @QueryParam("maxPrice") @DefaultValue("") final String querymaxPrice,
-         @QueryParam("adv") @DefaultValue("") final String adv
+         @QueryParam("adv") @DefaultValue("") final String adv,
+         @QueryParam("bas2") @DefaultValue("") final String bas2
          ) throws JsonProcessingException{
 
-      if (adv == null || adv.length() == 0) {
-         sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
+      if ((adv.isEmpty() || adv.length() == 0) && (bas2.isEmpty() || bas2.length() == 0)) {
+         sr = elasticClient.searchByRange(queryItem, 0, 100);
+      } else if (adv.isEmpty() || adv.length() == 0){
+         sr = elasticClient.searchByRange(queryGenre, query2, Integer.parseInt(from), Integer.parseInt(to));
       } else {
-         sr = elasticClient.searchByRange(queryGenre, queryTitle, queryISBN, queryAuthor, queryminPrice, querymaxPrice);
+         sr = elasticClient.searchByRange(queryTitle, queryISBN, queryAuthor, queryminPrice, querymaxPrice, Integer.parseInt(from), Integer.parseInt(to));
       }
                
       if (sr == null) {
@@ -82,19 +80,20 @@ public class SearchResources {
       */
       
      // ArrayList<Map<String, Object>> resTest = new ArrayList<>();
-      JSONArray array = new JSONArray();
+     // JSONArray array = new JSONArray();
       
    //   JsonObject value = Json.createObjectBuilder();
       List<Object> list = new ArrayList<>();
       for (SearchHit hit : results) {
           Map<String,Object> result = hit.getSource();
-         /* StringBuilder excerptBuilder = new StringBuilder();
+          StringBuilder excerptBuilder = new StringBuilder();
           for (Map.Entry<String, HighlightField> highlight : hit.getHighlightFields().entrySet()) { 
-              for (Text text : highlight.getValue().fragments()) { 
-                  excerptBuilder.append(text.string()); 
-                  excerptBuilder.append(" ... "); 
-              } 
-          } */
+             for (Text text : highlight.getValue().fragments()) { 
+                excerptBuilder.append(text.string()); 
+                excerptBuilder.append(" ... "); 
+             } 
+          } 
+          result.put("snippet", excerptBuilder.toString().trim());
          // resTest.add(result);
           //JSONObject object = new JSONObject(result); //Json.createObjectBuilder().build();
           //array.put(object);
@@ -122,7 +121,6 @@ public class SearchResources {
       // JsonObject value = Json.createObjectBuilder().add("query", queryItem + from + to).build();
 //    resumeWithResponse(ar, value.toString());     ???not sure
       
-     // resumeWithResponse(ar, arrayFinalJson);
       resumeWithResponse(ar, resultJsonString);
       
    }

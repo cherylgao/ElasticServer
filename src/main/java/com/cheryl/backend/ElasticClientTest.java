@@ -7,14 +7,13 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class ElasticClientTest
-{
-
+public class ElasticClientTest {
    @Test
-   public void test() {
+   public void test() throws JsonProcessingException {
       ElasticClient test = new ElasticClient();
-      String query = "Alexander Hamilton";
+      String query = "Alexander Hamilto";
       test.searchByRange(query, 0, 100);
-      // test.searchByRange("", "", "James Alexander", "", "", "");
+      //test.searchByRange("", query, 0, 100);
+      //test.searchByRange("", "9780545162074", "", "", "", 0, 100);
    }
 }
