@@ -152,7 +152,6 @@ public class ElasticClient {
                query,     // Text you are looking for
                "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
                ).fuzziness(Fuzziness.AUTO);
-
          elasticResponse = client.prepareSearch("books")
                .setTypes("book")
                .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -175,8 +174,6 @@ public class ElasticClient {
                .setFrom(start)
                .setSize(size)
                .addHighlightedField("genre").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
-               .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
-               .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .execute()
                .actionGet();
       } else {
@@ -194,6 +191,7 @@ public class ElasticClient {
                .setQuery(qb)            
                .setFrom(start)
                .setSize(size)
+               .addHighlightedField("genre").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
                .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
                .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
@@ -224,7 +222,7 @@ public class ElasticClient {
       String val = mapper.writeValueAsString(list);
 
       String resultJsonString = val.trim();
-      System.out.println("ElasticClient, Basic Search; Current Result: " + results.length); 
+      System.out.println("ElasticClient, Basic Search 2; Current Result: " + results.length); 
       System.out.println(resultJsonString);
       return new SearchResults(elasticResponse);
    }

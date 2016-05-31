@@ -47,7 +47,6 @@ public class SearchResources {
          @QueryParam("query") @DefaultValue("") final String queryItem,
          @QueryParam("from") @DefaultValue("") final String from,
          @QueryParam("to") @DefaultValue("") final String to,
-         @QueryParam("query2") @DefaultValue("") final String query2,
          @QueryParam("genre") @DefaultValue("") final String queryGenre,
          @QueryParam("title") @DefaultValue("") final String queryTitle,
          @QueryParam("isbn") @DefaultValue("") final String queryISBN,
@@ -61,7 +60,7 @@ public class SearchResources {
       if ((adv.isEmpty() || adv.length() == 0) && (base.isEmpty() || base.length() == 0)) {
          sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
       } else if (adv.isEmpty() || adv.length() == 0){
-         sr = elasticClient.searchByRange(queryGenre, query2, Integer.parseInt(from), Integer.parseInt(to));
+         sr = elasticClient.searchByRange(queryGenre, queryItem, Integer.parseInt(from), Integer.parseInt(to));
       } else {
          sr = elasticClient.searchByRange(queryTitle, queryISBN, queryAuthor, queryminPrice, querymaxPrice, Integer.parseInt(from), Integer.parseInt(to));
       }
