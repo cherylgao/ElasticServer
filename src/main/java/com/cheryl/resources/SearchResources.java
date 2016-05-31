@@ -55,11 +55,11 @@ public class SearchResources {
          @QueryParam("minPrice") @DefaultValue("") final String queryminPrice,
          @QueryParam("maxPrice") @DefaultValue("") final String querymaxPrice,
          @QueryParam("adv") @DefaultValue("") final String adv,
-         @QueryParam("bas2") @DefaultValue("") final String bas2
+         @QueryParam("base") @DefaultValue("") final String base
          ) throws JsonProcessingException{
 
-      if ((adv.isEmpty() || adv.length() == 0) && (bas2.isEmpty() || bas2.length() == 0)) {
-         sr = elasticClient.searchByRange(queryItem, 0, 100);
+      if ((adv.isEmpty() || adv.length() == 0) && (base.isEmpty() || base.length() == 0)) {
+         sr = elasticClient.searchByRange(queryItem, Integer.parseInt(from), Integer.parseInt(to));
       } else if (adv.isEmpty() || adv.length() == 0){
          sr = elasticClient.searchByRange(queryGenre, query2, Integer.parseInt(from), Integer.parseInt(to));
       } else {
