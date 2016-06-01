@@ -13,8 +13,8 @@ public class ElasticClientTest {
       ElasticClient test = new ElasticClient();
       String query = "You Are a Badass: How to Stop Doubting Your Greatness and Start Living an Awesome Life";
       //test.searchByRange(query, 0, 100);
-      //test.searchByRange("", query, 0, 100);
-      test.searchByRange("You Are a Badass: How to Stop Doubting Your Greatness and Start Living an Awesome Life", "", "", "", "", 0, 100);
+      test.searchByRange("Textbooks", "", 0, 100);
+      //test.searchByRange("Textbooks", "", "", "", "", 0, 100);
       //
    }
 }

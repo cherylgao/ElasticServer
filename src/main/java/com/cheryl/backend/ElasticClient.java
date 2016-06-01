@@ -166,7 +166,7 @@ public class ElasticClient {
                .execute()
                .actionGet();
       } else if (query == null || query.length() == 0) {
-         TermQueryBuilder qb = QueryBuilders.termQuery("genre", queryGenre);         
+         MatchQueryBuilder qb = QueryBuilders.matchPhraseQuery("genre", queryGenre);         
          elasticResponse = client.prepareSearch("books")
                .setTypes("book")
                .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -177,7 +177,7 @@ public class ElasticClient {
                .execute()
                .actionGet();
       } else {
-         TermQueryBuilder qb1 = QueryBuilders.termQuery("genre", queryGenre); 
+         MatchQueryBuilder qb1 = QueryBuilders.matchPhraseQuery("genre", queryGenre);  
          MultiMatchQueryBuilder qb2 = QueryBuilders.multiMatchQuery(
                query,     // Text you are looking for
                "title", "description", "url", "author", "ISBN10", "ISBN13", "tag" // Fields you query on
@@ -248,8 +248,8 @@ public class ElasticClient {
       MatchAllQueryBuilder qbAll = QueryBuilders.matchAllQuery();
       
       BoolQueryBuilder qbISBN = QueryBuilders.boolQuery()          
-            .should(QueryBuilders.termQuery("ISBN10", queryISBN))
-            .should(QueryBuilders.termQuery("ISBN13", queryISBN))
+            .should(QueryBuilders.matchPhraseQuery("ISBN10", queryISBN))
+            .should(QueryBuilders.matchPhraseQuery("ISBN13", queryISBN))
             .minimumNumberShouldMatch(1);
       
       System.out.println("queryTitle: " + queryTitle);
