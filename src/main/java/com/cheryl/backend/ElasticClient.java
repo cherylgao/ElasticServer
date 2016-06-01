@@ -272,6 +272,7 @@ public class ElasticClient {
             .setQuery(qb)
             .setFrom(start)
             .setSize(size)
+            .addSort("price", SortOrder.ASC)
             .addHighlightedField("title").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>") //snippet
             .addHighlightedField("description").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
             .addHighlightedField("author").setHighlighterPreTags("<b>").setHighlighterPostTags("</b>")
